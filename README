@@ -1,0 +1,22 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=1193
+
+expander.vim requires Vim's Python interface-----
+
+expander expands abbreviations. Its abbreviations can take arguments that are repeated in the expanded text. For instance, for C++ iterators you can type:
+
+@fib@vector<char>@vec<C-e>
+
+and this expands to:
+
+for(vector<char>::iterator i = vec.begin(); i != vec.end(); ++i) {
+    *
+}
+
+With your cursor in the place of the *. Defining new abbreviations is easy. The above one was defined like this:
+
+"fib": """
+for($1::iterator i = $2.begin(); i != $2.end(); ++i) {
+$#$0
+}"""
+
+When expander expands this, it replaces the string $# with spaces equal to your shiftwidth, it puts the cursor at $0, and it replaces $1, $2, etc, with the first, second, etc, arguments.

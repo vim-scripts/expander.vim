@@ -1,0 +1,142 @@
+*expander.txt*  expander -- flexible & easy abbreviation/template expansion
+
+Author: Michael Benfield (leftfist AT mac DOT com)
+Last Modified: 2004 Jan 30
+
+expander allows you to provide short abbreviations for common text patterns
+in your domain.
+
+==============================================================================
+                                                    *expander-install*
+Installation~
+Put expander.vim in your plugin directory (~/.vim/plugin/) and put
+expander.txt in your doc directory (~/.vim/doc/). expander requires
+Vim's Python interface. Run ":helptags ~/.vim/doc/".
+
+==============================================================================
+                                                    *expander-usage*
+Usage~
+To expand an abbreviation, type in insert mode with an argument separator
+character (@ by default), the abbreviation, and then press the expansion
+command (<C-e> by default). Here is an example, using expander's included C++
+abbreviations: >
+        @feb<C-e>                       // you type this
+        for(;;) {                       // It expands to this, with your
+                |                       // cursor in place of the |
+        };
+<
+expander indents according to your sw option, and handles the case where your
+abbreviation is already indented.
+>
+        {
+                @s<C-e>
+        }                               // expands to...
+
+        {
+                struct | {
+                };
+        }
+<
+What's more is that expander can handle arguments by specifying each one
+separated by argument separator. Thus, for the common situation in C++ of
+using a for-loop over an STL-style iterator: >
+        @fib@vector<int>@vec<C-e>       // expands to...
+        for(vector<int>::iterator i = vec.begin(); i != vec.end(); ++i) {
+                |
+        }
+<
+==============================================================================
+                                                    *expander-defaults*
+Defaults~
+
+expander is provided with a few abbreviations that are appropriate for C++
+(and in some cases C).
+
+The default abbreviations are "c" (class), "f" (for loop), "fb" (for loop with
+braces), "fe" (forever loop), "feb" (forever loop with braces), "fi" (for
+iterator loop), "fib" (for iterator loop with braces), "ig" (include guard),
+"s" (struct), "sw" (switch), "t" (template), and "u" (union). A little
+experimentation will tell you what arguments each takes (if you pass too few
+arguments, $1, $2, $3, etc, will be printed where your arguments would have
+gone, and if you pass too many the extras will simply be ignored).
+
+==============================================================================
+                                                    *expander-custom*
+Customization~
+
+Customizing expander requires a little bit of Python code. To write Python
+code in your vimrc, do it like this: >
+        python << EOF
+        # python code here
+        EOF
+<
+Note that indentation is significant to Python. For one-off python statements
+you can just use: >
+        python statement
+<
+To change the argument separator character to %, for instance: >
+        python expander_separator = "%"
+<
+The argument separator character actually doesn't have to be just a character
+- any string will work.
+
+expander's abbreviations are stored in a Python dictionary named
+expander_table. The keys in the dictionary are the strings representing the
+abbreviation. The values are either strings or lists (for syntactic
+convenience) representing the expanded text. An example illustrating the
+three abbrevations demonstrated above: >
+        python << EOF
+        expander_table = {
+        "feb": """
+        for(;;) {
+        $#$0
+        }""",
+
+        "fib": """
+        for($1::iterator i = $2.begin(); i != $2.end(); ++i) {
+        $#$0
+        }""",
+
+        "s": """
+        struct $0 {
+        };"""
+        }
+        EOF
+<
+Note that in your actual script this should be up against the left margin.
+Take a look at expander.vim for an example.
+
+Several things are notable here. Every time the string "$#" occurs in one of
+these values, expander replaces it with spaces equivalent to your shiftwidth
+option. The $0 will be where your cursor is placed. Finally, each of $1, $2,
+$3, etc, are replaced by the arguments you type between argument separator
+characters. This makes it as easy as possible to define new abbreviations. The
+first line of these strings is discarded, to allow you to write them as above.
+
+There is an alternate syntax using lists of strings: >
+        python << EOF
+        expander_table = {
+        "feb": ["for(;;) {",
+                "$#$0",
+                "}"],
+
+        "fib": ["for($1::iterator i = $2.begin(); i != $2.end(); ++i) {",
+                "$#$0",
+                "}"]
+        }
+        EOF
+<
+I generally prefer to use simple triple-quoted strings but this method using
+lists may be useful in some cases.
+
+To add abbreviations to expander_table rather than overriding it, a function
+expander_add is provided. Just make your definitions in a dictionary by
+another name, and then pass it to expander_add: >
+        python << EOF
+        expander_additions = {
+        # ...
+        }
+        expander_add(expander_additions)
+        EOF
+<
+vim:tw=78:ts=8:ft=help
